@@ -12,14 +12,14 @@ TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 
 echo "Downloading release tarballs..."
-curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-x86_64-apple-darwin.tar.gz"
-curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-aarch64-apple-darwin.tar.gz"
-curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-v${VERSION}-x86_64-apple-darwin.tar.gz"
+curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-v${VERSION}-aarch64-apple-darwin.tar.gz"
+curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
 
 echo "Generating checksums..."
-DARWIN_INTEL_SHA=$(shasum -a 256 "hipc-${VERSION}-x86_64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
-DARWIN_ARM_SHA=$(shasum -a 256 "hipc-${VERSION}-aarch64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
-LINUX_SHA=$(shasum -a 256 "hipc-${VERSION}-x86_64-unknown-linux-gnu.tar.gz" | cut -d ' ' -f 1)
+DARWIN_INTEL_SHA=$(shasum -a 256 "hipc-v${VERSION}-x86_64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
+DARWIN_ARM_SHA=$(shasum -a 256 "hipc-v${VERSION}-aarch64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
+LINUX_SHA=$(shasum -a 256 "hipc-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz" | cut -d ' ' -f 1)
 
 cd - > /dev/null
 rm -rf "$TEMP_DIR"
@@ -27,16 +27,45 @@ rm -rf "$TEMP_DIR"
 FORMULA_FILE="Formula/hipc.rb"
 
 echo "Updating formula..."
-sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$FORMULA_FILE"
 
-# Update Intel Mac SHA
-sed -i '' "/Hardware::CPU.arm?/,/else/!{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${DARWIN_INTEL_SHA}" # Intel Mac/};}" "$FORMULA_FILE"
+# Create a new formula file with updated version and checksums
+cat > "$FORMULA_FILE" << 'EOL'
+class Hipc < Formula
+  desc "CLI tool for managing Docker registries and compute resources on Hippius network"
+  homepage "https://hippius.com"
+  version "${VERSION}"
+  license "MIT"
 
-# Update ARM Mac SHA
-sed -i '' "/Hardware::CPU.arm?/,/else/{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${DARWIN_ARM_SHA}" # ARM Mac/};}" "$FORMULA_FILE"
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/thenervelab/hippius-cli/releases/download/v#{version}/hipc-v#{version}-aarch64-apple-darwin.tar.gz"
+      sha256 "${DARWIN_ARM_SHA}" # ARM Mac
+    else
+      url "https://github.com/thenervelab/hippius-cli/releases/download/v#{version}/hipc-v#{version}-x86_64-apple-darwin.tar.gz"
+      sha256 "${DARWIN_INTEL_SHA}" # Intel Mac
+    end
+  end
 
-# Update Linux SHA
-sed -i '' "/on_linux/,/end/{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${LINUX_SHA}" # Linux/};}" "$FORMULA_FILE"
+  on_linux do
+    url "https://github.com/thenervelab/hippius-cli/releases/download/v#{version}/hipc-v#{version}-x86_64-unknown-linux-gnu.tar.gz"
+    sha256 "${LINUX_SHA}" # Linux
+  end
+
+  def install
+    bin.install "hipc"
+  end
+
+  test do
+    system "#{bin}/hipc", "--version"
+  end
+end
+EOL
+
+# Replace variables in the formula
+sed -i '' "s/\${VERSION}/${VERSION}/g" "$FORMULA_FILE"
+sed -i '' "s/\${DARWIN_ARM_SHA}/${DARWIN_ARM_SHA}/g" "$FORMULA_FILE"
+sed -i '' "s/\${DARWIN_INTEL_SHA}/${DARWIN_INTEL_SHA}/g" "$FORMULA_FILE"
+sed -i '' "s/\${LINUX_SHA}/${LINUX_SHA}/g" "$FORMULA_FILE"
 
 echo "Testing formula..."
 brew install --build-from-source "$FORMULA_FILE"
