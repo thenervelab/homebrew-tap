@@ -13,10 +13,12 @@ cd "$TEMP_DIR"
 
 echo "Downloading release tarballs..."
 curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-x86_64-apple-darwin.tar.gz"
+curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-aarch64-apple-darwin.tar.gz"
 curl -LO "https://github.com/thenervelab/hippius-cli/releases/download/v${VERSION}/hipc-${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
 
 echo "Generating checksums..."
-DARWIN_SHA=$(shasum -a 256 "hipc-${VERSION}-x86_64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
+DARWIN_INTEL_SHA=$(shasum -a 256 "hipc-${VERSION}-x86_64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
+DARWIN_ARM_SHA=$(shasum -a 256 "hipc-${VERSION}-aarch64-apple-darwin.tar.gz" | cut -d ' ' -f 1)
 LINUX_SHA=$(shasum -a 256 "hipc-${VERSION}-x86_64-unknown-linux-gnu.tar.gz" | cut -d ' ' -f 1)
 
 cd - > /dev/null
@@ -26,8 +28,15 @@ FORMULA_FILE="Formula/hipc.rb"
 
 echo "Updating formula..."
 sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$FORMULA_FILE"
-sed -i '' "s/sha256 \".*\" # macOS/sha256 \"${DARWIN_SHA}\" # macOS/" "$FORMULA_FILE"
-sed -i '' "s/sha256 \".*\" # Linux/sha256 \"${LINUX_SHA}\" # Linux/" "$FORMULA_FILE"
+
+# Update Intel Mac SHA
+sed -i '' "/Hardware::CPU.arm?/,/else/!{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${DARWIN_INTEL_SHA}" # Intel Mac/};}" "$FORMULA_FILE"
+
+# Update ARM Mac SHA
+sed -i '' "/Hardware::CPU.arm?/,/else/{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${DARWIN_ARM_SHA}" # ARM Mac/};}" "$FORMULA_FILE"
+
+# Update Linux SHA
+sed -i '' "/on_linux/,/end/{/REPLACE_WITH_ACTUAL_SHA.*$/{s/REPLACE_WITH_ACTUAL_SHA.*$/"${LINUX_SHA}" # Linux/};}" "$FORMULA_FILE"
 
 echo "Testing formula..."
 brew install --build-from-source "$FORMULA_FILE"
