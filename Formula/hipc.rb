@@ -1,7 +1,7 @@
 class Hipc < Formula
   desc "CLI tool for managing Docker registries and compute resources on Hippius network"
   homepage "https://hippius.com"
-  version "0.1.0"
+  version "0.0.4"
   license "MIT"
 
   on_macos do
