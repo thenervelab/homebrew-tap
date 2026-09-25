@@ -1,0 +1,30 @@
+# thenervelab/homebrew-tap
+
+> The Homebrew tap that installs `hipc`. That CLI is deprecated. Do not tap this to store files or to run a miner.
+
+Part of the Hippius docs for agents. Start at https://docs.hippius.com/llms.txt
+
+## What it is and what it does
+
+`brew tap thenervelab/tap` then `brew install hipc` is the install path in this repo's README. `hipc` targeted the retired IPFS network. The formula is not a working install of a current Hippius client.
+
+https://docs.hippius.com/cli/usage
+
+## How to install
+
+Do not.
+
+## What to use instead
+
+| Job | Use |
+|---|---|
+| Store or fetch files | An S3 client. https://raw.githubusercontent.com/thenervelab/hippius-s3/staging/llms.txt |
+| Models and containers | `pip install hippius_hub`. https://raw.githubusercontent.com/thenervelab/hippius-hub/main/llms.txt |
+| Desktop sync | https://hippius.com/desktop-app |
+| Run a miner | https://docs.hippius.com/earn/arion/running-miner |
+
+## Links
+
+- Documentation home: https://docs.hippius.com
+- Deprecation notice: https://docs.hippius.com/cli/usage
+- This repository's README (the old install): https://github.com/thenervelab/homebrew-tap/blob/main/README.md
