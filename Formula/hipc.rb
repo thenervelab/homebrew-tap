@@ -4,6 +4,10 @@ class Hipc < Formula
   version "0.0.7"
   license "MIT"
 
+  # hipc was the IPFS-era CLI. The Hippius console CLI is now `hip`, installed by the
+  # hippius-cli formula from the thenervelab/hip releases.
+  deprecate! date: "2026-11-01", because: "hipc is replaced by hip: run `brew install thenervelab/tap/hippius-cli`"
+
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/thenervelab/hippius-cli/releases/download/v#{version}/hipc-v#{version}-aarch64-apple-darwin.tar.gz"
